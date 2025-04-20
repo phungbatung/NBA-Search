@@ -165,7 +165,7 @@ def register():
         email = data.get('email')
         name = data.get('name')
         
-        user_id = PostController.create_user(username, password, email, name)
+        user_id = UserController.create_user(username, password, email, name)
         if user_id:
             print("Đăng ký thành công!")
             return jsonify({
