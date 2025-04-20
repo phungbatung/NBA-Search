@@ -2,9 +2,12 @@ from modules.analysis import isNBA
 from modules.scraper import get_playoff_bracket, get_standings
 from modules.transformer import create_html_bracket
 from modules.query import Query
+from modules.Controller.userController import UserController
+from modules.Controller.postController import PostController
+from datetime import datetime
 from data.text_data import unsure, non_nba
-from flask import Flask, render_template, request, jsonify, redirect
-
+from flask import Flask, render_template, request, jsonify, redirect, flash
+import json
 app = Flask(__name__)
 
 
@@ -149,3 +152,112 @@ def get_bot_response():
 
 if __name__ == "__main__":
     app.run()
+    
+    
+    
+# Tinh nang them
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        name = data.get('name')
+        
+        user_id = PostController.create_user(username, password, email, name)
+        if user_id:
+            print("Đăng ký thành công!")
+            return jsonify({
+                "message": "Đăng ký thành công!",
+                "status": "success"
+            }), 200
+        else:
+            print("Đã xảy ra lỗi. Vui lòng thử lại!")
+            return jsonify({
+                "message": "Đã xảy ra lỗi. Vui lòng thử lại!",
+                "status": "danger"
+            }), 400
+            
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = UserController.get_user(username, password)
+        if user:
+            print("Đăng nhập thành công!")
+            return jsonify({
+                "message": "Đăng nhập thành công!",
+                "status": "success",
+                "user" : user.__dict__
+            }), 200
+        else:
+            print("Tài khoản hoặc mật khẩu không đúng, vui lòng thử lại!")
+            return jsonify({
+                "message": "Tài khoản hoặc mật khẩu không đúng, vui lòng thử lại!",
+                "status": "danger"
+            }), 400
+            
+@app.route('/createpost', methods=['GET', 'POST'])
+def create_post():
+    if request.method == 'POST':
+        data = request.get_json()
+        userId = data.get('userId')
+        title = data.get('title')
+        content = data.get('content')
+        
+        newPost = PostController.create_post(userId, title, content)
+        if newPost:
+            print("Tạo bài viết thành công!")
+            return jsonify({
+                "message": "Tạo bài viết thành công!",
+                "status": "success"
+            }), 200
+        else:
+            print("Đã xảy ra lỗi. Vui lòng thử lại!")
+            return jsonify({
+                "message": "Đã xảy ra lỗi khi tạo bài viết. Vui lòng thử lại!",
+                "status": "danger"
+            }), 400
+
+@app.route('/getpost', methods=['GET'])
+def get_post():
+    data = request.get_json()
+    postId = data.get('postId')
+
+    post = PostController.get_post_by_id(postId)
+    if post:
+        print("Lấy bài viết thành công!")
+        return jsonify({
+            "message": "Lấy bài viết thành công!",
+            "status": "success",
+            "post" : post.__dict__
+        }), 200
+    else:
+        print("Đã xảy ra lỗi. Vui lòng thử lại!")
+        return jsonify({
+            "message": "Đã xảy ra lỗi khi lấy bài viết. Vui lòng thử lại!",
+            "status": "danger"
+        }), 400
+@app.route('/getposts', methods=['GET'])
+def get_posts():
+    data = request.get_json()
+    start = data.get('start')
+    limit = data.get('limit')
+    post = PostController.get_posts(start, limit)
+    if post:
+        print("Lấy bài viết thành công!")
+        return jsonify({
+            "message": "Lấy bài viết thành công!",
+            "status": "success",
+            "post" : post.__dict__
+        }), 200
+    else:
+        print("Đã xảy ra lỗi. Vui lòng thử lại!")
+        return jsonify({
+            "message": "Đã xảy ra lỗi khi lấy bài viết. Vui lòng thử lại!",
+            "status": "danger"
+        }), 400
