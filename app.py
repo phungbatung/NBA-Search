@@ -4,6 +4,7 @@ from modules.transformer import create_html_bracket
 from modules.query import Query
 from modules.Controller.userController import UserController
 from modules.Controller.postController import PostController
+from modules.Controller.commentController import CommentController
 from datetime import datetime
 from data.text_data import unsure, non_nba
 from flask import Flask, render_template, request, jsonify, redirect, flash
@@ -234,7 +235,7 @@ def get_post():
         return jsonify({
             "message": "Lấy bài viết thành công!",
             "status": "success",
-            "post" : post.__dict__
+            "post" : post.to_dict()
         }), 200
     else:
         print("Đã xảy ra lỗi. Vui lòng thử lại!")
@@ -259,5 +260,39 @@ def get_posts():
         print("Đã xảy ra lỗi. Vui lòng thử lại!")
         return jsonify({
             "message": "Đã xảy ra lỗi khi lấy bài viết. Vui lòng thử lại!",
+            "status": "danger"
+        }), 400
+        
+@app.route('/comment/create', methods=['POST'])
+def create_comment():
+    data = request.get_json()
+    postId = data.get('postId')
+    userId = data.get('userId')
+    content = data.get('content')
+
+    comment_id = CommentController.create_comment(postId, userId, content)
+    if comment_id:
+        return jsonify({
+            "message": "Bình luận đã được tạo!",
+            "status": "success",
+            "commentId": comment_id
+        }), 201
+    else:
+        return jsonify({
+            "message": "Tạo bình luận thất bại!",
+            "status": "danger"
+        }), 500
+
+@app.route('/comment/<int:comment_id>/upvote', methods=['POST'])
+def upvote_comment(comment_id):
+    success = CommentController.upvote_comment(comment_id)
+    if success:
+        return jsonify({
+            "message": "Upvote thành công!",
+            "status": "success"
+        }), 200
+    else:
+        return jsonify({
+            "message": "Không thể upvote bình luận!",
             "status": "danger"
         }), 400
