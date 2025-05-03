@@ -41,17 +41,3 @@ class CommentController:
         finally:
             cursor.close()
             conn.close()
-    @staticmethod
-    def upvote_comment(commentId):
-        conn, cursor = get_cursor()
-        try:
-            query = "UPDATE comments SET upvote = upvote + 1 WHERE commentId = %s"
-            cursor.execute(query, (commentId,))
-            conn.commit()
-            return cursor.rowcount > 0  # Trả về True nếu có dòng nào được cập nhật
-        except Exception as e:
-            print(f"Error while upvoting comment {commentId}: {e}")
-            return False
-        finally:
-            cursor.close()
-            conn.close()

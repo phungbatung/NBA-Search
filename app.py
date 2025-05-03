@@ -283,9 +283,12 @@ def create_comment():
             "status": "danger"
         }), 500
 
-@app.route('/comment/<int:comment_id>/upvote', methods=['POST'])
-def upvote_comment(comment_id):
-    success = CommentController.upvote_comment(comment_id)
+@app.route('/upvote', methods=['POST'])
+def upvote_comment():
+    data = request.get_json()
+    comment_id = data.get('commentId')
+    user_id = data.get('userId')
+    success = CommentController.upvote_comment(user_id,comment_id)
     if success:
         return jsonify({
             "message": "Upvote thành công!",
