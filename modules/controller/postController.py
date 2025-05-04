@@ -32,11 +32,9 @@ class PostController:
             query = "SELECT * FROM posts WHERE postId = %s"
             cursor.execute(query, (postId,))
             post_data = cursor.fetchone()
-            print("log")
             if post_data:
-                print("log1")
                 comments = CommentController.get_comments_by_post(postId)
-                print("log2")
+                print(comments)
                 return Post(post_data[0], post_data[1], post_data[2], post_data[3], post_data[4], comments)
             else:
                 print("Post not found.")
