@@ -1,6 +1,6 @@
 from modules.dbconnect.dbconnect import get_cursor
-from modules.Model.postModel import Post
-from modules.Controller.commentController import CommentController
+from modules.model.postModel import Post
+from modules.controller.commentController import CommentController
 from datetime import datetime
 
 class PostController:

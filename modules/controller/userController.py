@@ -1,6 +1,6 @@
 from modules.dbconnect.dbconnect import get_cursor
 from werkzeug.security import generate_password_hash, check_password_hash
-from modules.Model.userModel import User
+from modules.model.userModel import User
 
 
 class UserController:

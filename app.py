@@ -2,9 +2,9 @@ from modules.analysis import isNBA
 from modules.scraper import get_playoff_bracket, get_standings
 from modules.transformer import create_html_bracket
 from modules.query import Query
-from modules.Controller.userController import UserController
-from modules.Controller.postController import PostController
-from modules.Controller.commentController import CommentController
+from modules.controller.userController import UserController
+from modules.controller.postController import PostController
+from modules.controller.commentController import CommentController
 from datetime import datetime
 from data.text_data import unsure, non_nba
 from flask import Flask, render_template, request, jsonify, redirect, flash
