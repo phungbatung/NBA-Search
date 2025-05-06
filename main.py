@@ -31,7 +31,7 @@ def main():
         suite = unittest.TestLoader().loadTestsFromModule(inference_tests)
         unittest.TextTestRunner(verbosity=0).run(suite)
     elif sys.argv[1] == "run":
-        application.run()
+        application.run(debug=True)
     elif sys.argv[1] == "data":
         visualize.main()
     else:

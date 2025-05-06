@@ -27,6 +27,45 @@ class CommentController:
             conn.close()
 
     @staticmethod
+    def save_image_path(postId, imagePath, uploadedAt):
+        conn, cursor = get_cursor()
+        try:
+            query = """
+                INSERT INTO images (postId, imagePath, uploadedAt)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(query, (postId, imagePath, uploadedAt))
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            print(f"Error while saving image path: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_image_path(postId):
+        conn, cursor = get_cursor()
+        try:
+            query = """
+                SELECT imagePath FROM images WHERE postId = %s
+            """
+            cursor.execute(query, (postId,))
+            results = cursor.fetchall()  # Lấy tất cả kết quả
+            if results:
+                return results[0][0]  # Lấy kết quả đầu tiên
+            else:
+                print("No image found for the given postId.")
+                return None
+        except Exception as e:
+            print(f"Error while retrieving image path: {e}")
+            return None
+        finally:
+            cursor.close()  # Đảm bảo đóng con trỏ
+            conn.close()  # Đảm bảo đóng kết nối
+
+    @staticmethod
     def get_comments_by_post(postId):
         conn, cursor = get_cursor()
         try:

@@ -7,8 +7,10 @@ from modules.controller.postController import PostController
 from modules.controller.commentController import CommentController
 from datetime import datetime
 from data.text_data import unsure, non_nba
-from flask import Flask, render_template, request, jsonify, redirect, flash
+from flask import Flask, render_template, request, jsonify, redirect, flash, send_file
 import json
+from werkzeug.utils import secure_filename
+import os
 app = Flask(__name__)
 
 
@@ -299,3 +301,64 @@ def upvote_comment():
             "message": "Không thể upvote bình luận!",
             "status": "danger"
         }), 400
+
+
+# Thư mục lưu trữ ảnh
+UPLOAD_FOLDER = 'uploads/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Giới hạn kích thước tệp (16 MB)
+
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({"message": "No file part"}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"message": "No selected file"}), 400
+    
+    # Kiểm tra loại tệp (nếu cần)
+    if file and allowed_file(file.filename):
+        filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(filename)
+
+        # Lấy postId từ form
+        # post_id = request.form.get('postId') #post id được gửi từ frontend
+        post_id = 1 # đây là fake
+        if not post_id:
+            return jsonify({"message": "Missing postId"}), 400
+
+        # Lưu đường dẫn vào DB thông qua CommentController
+        uploaded_at = datetime.now()
+        success = CommentController.save_image_path(post_id, filename, uploaded_at)
+        if success:
+            return jsonify({"message": "File uploaded successfully!"}), 200
+        else: 
+            return jsonify({"message": "File saved but DB insert failed"}), 500
+    else:
+        return jsonify({"message": "Invalid file type"}), 400
+
+def allowed_file(filename):
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+# API trả ảnh từ đường dẫn
+@app.route('/image/<int:image_id>', methods=['GET'])
+def get_image(image_id):
+    # Lấy thông tin ảnh từ cơ sở dữ liệu
+    image = CommentController.get_image_path(image_id)
+    
+    if image and os.path.exists(image):
+        # Lấy tên tệp từ đường dẫn
+        filename = os.path.basename(image)
+        
+        # Kiểm tra phần mở rộng, nếu không có thì thêm vào
+        if not filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+            filename += '.jpg'  # Hoặc thêm loại phần mở rộng phù hợp
+        
+        # Trả về ảnh từ đường dẫn với đúng tên tệp và phần mở rộng
+        return send_file(image, mimetype='image/jpeg', as_attachment=True, download_name=filename)
+    else:
+        return jsonify({"error": "Image not found or path invalid"}), 404
