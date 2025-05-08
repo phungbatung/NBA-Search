@@ -7,10 +7,18 @@ from modules.controller.postController import PostController
 from modules.controller.commentController import CommentController
 from datetime import datetime
 from data.text_data import unsure, non_nba
-from flask import Flask, render_template, request, jsonify, redirect, flash
+from flask import Flask, render_template, request, jsonify, redirect, flash, send_file
 import json
+from werkzeug.utils import secure_filename
+import os
 app = Flask(__name__)
 
+
+
+UPLOAD_FOLDER = 'uploads/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Giới hạn kích thước tệp (16 MB)
 
 
 """
@@ -205,12 +213,22 @@ def login():
 @app.route('/createpost', methods=['GET', 'POST'])
 def create_post():
     if request.method == 'POST':
-        data = request.get_json()
+        data = json.loads(request.form.get('data'))
         userId = data.get('userId')
         title = data.get('title')
         content = data.get('content')
+        if 'file' not in request.files:
+            imagePath = None
+        else:
+            file = request.files['file']
+            if file.filename == '':
+                imagePath = None
+            else:
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                imagePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
-        newPost = PostController.create_post(userId, title, content)
+        newPost = PostController.create_post(userId, title, content, imagePath)
         if newPost:
             print("Tạo bài viết thành công!")
             return jsonify({
@@ -219,19 +237,24 @@ def create_post():
             }), 200
         else:
             print("Đã xảy ra lỗi. Vui lòng thử lại!")
+            if imagePath and os.path.exists(imagePath):
+                os.remove(imagePath)
             return jsonify({
                 "message": "Đã xảy ra lỗi khi tạo bài viết. Vui lòng thử lại!",
                 "status": "danger"
             }), 400
 
-@app.route('/getpost', methods=['GET'])
-def get_post():
+
+
+@app.route('/getpostbyid', methods=['GET'])
+def get_post_by_id():
     data = request.get_json()
     postId = data.get('postId')
 
     post = PostController.get_post_by_id(postId)
     if post:
         print("Lấy bài viết thành công!")
+        
         return jsonify({
             "message": "Lấy bài viết thành công!",
             "status": "success",
@@ -243,18 +266,21 @@ def get_post():
             "message": "Đã xảy ra lỗi khi lấy bài viết. Vui lòng thử lại!",
             "status": "danger"
         }), 400
-@app.route('/getposts', methods=['GET'])
+@app.route('/getallposts', methods=['GET'])
 def get_posts():
     data = request.get_json()
+    start = 0
+    limit = 10
     start = data.get('start')
     limit = data.get('limit')
     post = PostController.get_posts(start, limit)
+    
     if post:
         print("Lấy bài viết thành công!")
         return jsonify({
             "message": "Lấy bài viết thành công!",
             "status": "success",
-            "post" : post.__dict__
+            "posts" : post
         }), 200
     else:
         print("Đã xảy ra lỗi. Vui lòng thử lại!")
@@ -299,3 +325,8 @@ def upvote_post():
             "message": "Không thể upvote bài viết!",
             "status": "danger"
         }), 400
+        
+@app.route('/download/image/<filename>')
+def download_image(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    return send_file(filepath, mimetype='image/jpeg')
