@@ -62,3 +62,26 @@ class PostController:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def upvote_post(userId, postId):
+        conn, cursor = get_cursor()
+        try:
+            check_query = "SELECT 1 FROM upvotes WHERE userId = %s AND postId = %s"
+            cursor.execute(check_query, (userId, postId))
+            already_upvoted = cursor.fetchone()
+
+            if already_upvoted:
+                print(f"User {userId} đã upvote post {postId} trước đó.")
+                return False
+
+            insert_query = "INSERT INTO upvotes (userId, postId) VALUES (%s, %s)"
+            cursor.execute(insert_query, (userId, postId))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error while upvoting post {postId} by user {userId}: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
