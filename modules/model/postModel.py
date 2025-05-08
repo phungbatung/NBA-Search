@@ -1,11 +1,12 @@
 class Post:
-    def __init__(self, postId, userId, title, content, createdAt, comments=[]):
+    def __init__(self, postId, userId, title, content, createdAt, comments=[], upvote=0):
         self.postId = postId
         self.userId = userId
         self.title = title
         self.content = content
         self.createdAt = createdAt
         self.comments = comments
+        self.upvote =upvote
 
     def __repr__(self):
         return (
@@ -19,5 +20,6 @@ class Post:
             "title": self.title,
             "content": self.content,
             "createdAt": self.createdAt,
-            "comments": [c.to_dict() if hasattr(c, 'to_dict') else c for c in self.comments]
+            "comments": [c.to_dict() if hasattr(c, 'to_dict') else c for c in self.comments],
+            "upvote": self.upvote
         }

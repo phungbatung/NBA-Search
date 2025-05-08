@@ -8,15 +8,15 @@ class CommentController:
         pass
 
     @staticmethod
-    def create_comment(postId, userId, content, upvote=0):
+    def create_comment(postId, userId, content):
         conn, cursor = get_cursor()
         createdAt = datetime.now()
         try:
             query = """
-                INSERT INTO comments (postId, userId, content, createdAt, upvote)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO comments (postId, userId, content, createdAt)
+                VALUES (%s, %s, %s, %s)
             """
-            cursor.execute(query, (postId, userId, content, createdAt, upvote))
+            cursor.execute(query, (postId, userId, content, createdAt))
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
@@ -31,21 +31,32 @@ class CommentController:
         conn, cursor = get_cursor()
         try:
             query = """
-                SELECT c.commentId, c.postId, c.userId, c.content, c.createdAt,
-                       COUNT(u.upvoteId) AS upvote
+                SELECT c.commentId, c.content, c.createdAt, c.postId, u.username
                 FROM comments c
-                LEFT JOIN upvotes u ON c.commentId = u.commentId
+                JOIN user u ON c.userId = u.userId
                 WHERE c.postId = %s
-                GROUP BY c.commentId, c.postId, c.userId, c.content, c.createdAt
                 ORDER BY c.createdAt ASC
             """
             cursor.execute(query, (postId,))
-            data = cursor.fetchall()
-            print(data)
-            return [Comment(*row) for row in data]
+            comment_rows = cursor.fetchall()
+
+            comments = []
+            for row in comment_rows:
+                comment = {
+                    "commentId": row[0],
+                    "content": row[1],
+                    "createdAt": row[2],
+                    "postId": row[3],
+                    "username": row[4]
+                }
+                comments.append(comment)
+
+            return comments
+
         except Exception as e:
-            print(f"Error while fetching comments for post {postId}: {e}")
+            print(f"Error while fetching comments: {e}")
             return []
+
         finally:
             cursor.close()
             conn.close()

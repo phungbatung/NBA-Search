@@ -29,22 +29,87 @@ class PostController:
     def get_post_by_id(postId):
         conn, cursor = get_cursor()
         try:
-            query = "SELECT * FROM posts WHERE postId = %s"
+            # JOIN để lấy thông tin bài viết kèm username
+            query = """
+                SELECT p.postId, p.title, p.content, p.createdAt, u.username
+                FROM posts p
+                JOIN user u ON p.userId = u.userId
+                WHERE p.postId = %s
+            """
             cursor.execute(query, (postId,))
             post_data = cursor.fetchone()
+
             if post_data:
+                # Lấy comments
                 comments = CommentController.get_comments_by_post(postId)
-                print(comments)
-                return Post(post_data[0], post_data[1], post_data[2], post_data[3], post_data[4], comments)
+                comments_list = [c.to_dict() if hasattr(c, 'to_dict') else c for c in comments]
+
+                # Lấy số lượng upvote
+                upvote_query = "SELECT COUNT(*) FROM upvotes WHERE postId = %s"
+                cursor.execute(upvote_query, (postId,))
+                upvote_count = cursor.fetchone()[0]
+
+                # Trả về JSON (dictionary)
+                return {
+                    "postId": post_data[0],
+                    "title": post_data[1],
+                    "content": post_data[2],
+                    "createdAt": post_data[3],
+                    "username": post_data[4],   # username thay vì userId
+                    "comments": comments_list,
+                    "upvote": upvote_count
+                }
             else:
                 print("Post not found.")
                 return None
+
         except Exception as e:
             print(f"Error while fetching post by ID: {e}")
             return None
+
         finally:
             cursor.close()
             conn.close()
+
+    # def get_post_by_id(postId):
+    #     conn, cursor = get_cursor()
+    #     try:
+    #         # Lấy thông tin bài viết
+    #         query = "SELECT * FROM posts WHERE postId = %s"
+    #         cursor.execute(query, (postId,))
+    #         post_data = cursor.fetchone()
+
+    #         if post_data:
+    #             # Lấy danh sách comment của post
+    #             comments = CommentController.get_comments_by_post(postId)
+
+    #             # Đếm số lượng upvotes
+    #             upvote_query = "SELECT COUNT(*) FROM upvotes WHERE postId = %s"
+    #             cursor.execute(upvote_query, (postId,))
+    #             upvote_count = cursor.fetchone()[0]
+
+    #             # Tạo object Post
+    #             return Post(
+    #                 postId=post_data[0],
+    #                 userId=post_data[1],
+    #                 title=post_data[2],
+    #                 content=post_data[3],
+    #                 createdAt=post_data[4],
+    #                 comments=comments,
+    #                 upvote=upvote_count
+    #             )
+    #         else:
+    #             print("Post not found.")
+    #             return None
+
+    # except Exception as e:
+    #     print(f"Error while fetching post by ID: {e}")
+    #     return None
+
+    # finally:
+    #     cursor.close()
+    #     conn.close()
+
 
     @staticmethod
     def create_post(userId, title, content):

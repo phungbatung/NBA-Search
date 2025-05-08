@@ -235,7 +235,7 @@ def get_post():
         return jsonify({
             "message": "Lấy bài viết thành công!",
             "status": "success",
-            "post" : post.to_dict()
+            "post" : post
         }), 200
     else:
         print("Đã xảy ra lỗi. Vui lòng thử lại!")
@@ -288,7 +288,7 @@ def upvote_post():
     data = request.get_json()
     post_id = data.get('postId')
     user_id = data.get('userId')
-    success = CommentController.upvote_comment(user_id, post_id)
+    success = PostController.upvote_post(user_id, post_id)
     if success:
         return jsonify({
             "message": "Upvote thành công!",
